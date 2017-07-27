@@ -5,6 +5,7 @@ import (
 	"github.com/hpcloud/tail"
 	"regexp"
 	"time"
+	"os"
 )
 
 // Make this global so we only have to compile it once
@@ -37,7 +38,7 @@ func logCollector(outfile string, statusCodes *map[string]int, errorPaths *map[s
 			statusCodesCopy := *statusCodes
 			*errorPaths = map[string]int{}
 			*statusCodes = map[string]int{}
-			fmt.Println(outfile, outputDataToString(statusCodesCopy, errorPathsCopy))
+			writeDataToLogfile(outfile, outputDataToString(statusCodesCopy, errorPathsCopy))
 
 		default:
 			continue
@@ -119,6 +120,20 @@ func outputDataToString(statusCodes map[string]int, errorPaths map[string]int) (
 
 	return
 }
+
+func writeDataToLogfile(outfile string, data string) {
+	f, err := os.OpenFile(outfile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil {
+		panic(err)
+	}
+
+	defer f.Close()
+
+	if _, err = f.WriteString(data); err != nil {
+		panic(err)
+	}
+}
+
 
 func requestRegex() *regexp.Regexp {
 	re := regexp.MustCompile(`\s(\/.*)\s(?:HTTP)`)
