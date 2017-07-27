@@ -38,7 +38,8 @@ func logCollector(outfile string, statusCodes *map[string]int, errorPaths *map[s
 			statusCodesCopy := *statusCodes
 			*errorPaths = map[string]int{}
 			*statusCodes = map[string]int{}
-			writeDataToLogfile(outfile, outputDataToString(statusCodesCopy, errorPathsCopy))
+			fmt.Println(outfile, outputDataToString(statusCodesCopy, errorPathsCopy))
+			//writeDataToLogfile(outfile, outputDataToString(statusCodesCopy, errorPathsCopy))
 
 		default:
 			continue
@@ -59,31 +60,20 @@ func processLines(logFile string, statusCodes *map[string]int, errorPaths *map[s
 }
 
 func processLine(line string, statusCodes *map[string]int, errorPaths *map[string]int) {
+	var code, request string
+
 	fields := logFormatRegex.FindStringSubmatch(line)
 	if fields == nil {
 		panic(fmt.Errorf("access log line '%v' does not match given format '%v'", line, logFormatRegex))
 	}
 
-	logEntry := map[string]string{}
-
-	for i, name := range logFormatRegex.SubexpNames() {
-		logEntry[name] = fields[i]
-	}
-
-	code, ok := logEntry["status"]
-	if !ok {
-		return
-	}
-
-	code = grabStatusCodeClass(code)
+	// This wont change unless the format changes so I'm happy for the efficientcy gain
+	request = fields[9]
+	code = grabStatusCodeClass(fields[10])
 
 	(*statusCodes)[code]++
 	if code == "50x" {
-		req, ok := logEntry["request"]
-		if !ok {
-			return
-		}
-		(*errorPaths)[grabPathFromRequest(req)]++
+		(*errorPaths)[grabPathFromRequest(request)]++
 	}
 }
 
