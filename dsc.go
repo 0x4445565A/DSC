@@ -37,7 +37,7 @@ func logCollector(outfile string, statusCodes *map[string]int, errorPaths *map[s
 			statusCodesCopy := *statusCodes
 			*errorPaths = map[string]int{}
 			*statusCodes = map[string]int{}
-			fmt.Println(outfile, statusCodesCopy, errorPathsCopy)
+			fmt.Println(outfile, outputDataToString(statusCodesCopy, errorPathsCopy))
 
 		default:
 			continue
@@ -97,6 +97,27 @@ func grabStatusCodeClass(code string) string {
 // Given a request use a regex to load the path
 func grabPathFromRequest(request string) string {
 	return requestFormatRegex.FindStringSubmatch(request)[1]
+}
+
+// Loop through our maps for errorPaths and statusCode counts and output in the proper format
+func outputDataToString(statusCodes map[string]int, errorPaths map[string]int) (out string) {
+	// Loop through our valid codes
+	for i := 5; i > 1; i-- {
+		codeClass := fmt.Sprintf("%d0x", i)
+		if val, ok := statusCodes[codeClass]; ok {
+			out += fmt.Sprintf("%s:%d|s\n", codeClass, val)
+		}
+		// else {
+		// 	out += fmt.Sprintf("%s:%d|s\n", codeClass, 0)
+		// }
+	}
+
+	// All of that paths that are 50x and their counts
+	for path, val := range errorPaths {
+		out += fmt.Sprintf("%s:%d|s\n", path, val)
+	}
+
+	return
 }
 
 func requestRegex() *regexp.Regexp {
