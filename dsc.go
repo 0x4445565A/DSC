@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"time"
 	"os"
+	"flag"
 )
 
 // Make this global so we only have to compile it once
@@ -19,12 +20,18 @@ func init() {
 }
 
 func main() {
-	logFile := "./access.log"
+	var logFile string
+	var outFile string
+
+	flag.StringVar(&logFile, "log", "/var/log/nginx/access.log", "Location of nginx log")
+	flag.StringVar(&outFile, "output", "/var/log/stats.log", "Location of output log")
+
+    flag.Parse()
 
 	errorPaths := map[string]int{}
 	statusCodes := map[string]int{}
 
-	go logCollector("stats.log", &statusCodes, &errorPaths)
+	go logCollector(outFile, &statusCodes, &errorPaths)
 	processLines(logFile, &statusCodes, &errorPaths)
 
 }
@@ -38,8 +45,8 @@ func logCollector(outfile string, statusCodes *map[string]int, errorPaths *map[s
 			statusCodesCopy := *statusCodes
 			*errorPaths = map[string]int{}
 			*statusCodes = map[string]int{}
-			fmt.Println(outfile, outputDataToString(statusCodesCopy, errorPathsCopy))
-			//writeDataToLogfile(outfile, outputDataToString(statusCodesCopy, errorPathsCopy))
+			//fmt.Println(outfile, outputDataToString(statusCodesCopy, errorPathsCopy))
+			writeDataToLogfile(outfile, outputDataToString(statusCodesCopy, errorPathsCopy))
 
 		default:
 			continue
