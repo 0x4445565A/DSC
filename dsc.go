@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/hpcloud/tail"
 	"regexp"
+	"time"
 )
 
 // Make this global so we only have to compile it once
@@ -19,44 +20,69 @@ func init() {
 func main() {
 	logFile := "./access.log"
 
+	errorPaths := map[string]int{}
+	statusCodes := map[string]int{}
+
+	go logCollector("stats.log", &statusCodes, &errorPaths)
+	processLines(logFile, &statusCodes, &errorPaths)
+
+}
+
+func logCollector(outfile string, statusCodes *map[string]int, errorPaths *map[string]int) {
+	tickChan := time.NewTicker(time.Second * 5).C
+	for {
+		select {
+		case <-tickChan:
+			errorPathsCopy := *errorPaths
+			statusCodesCopy := *statusCodes
+			*errorPaths = map[string]int{}
+			*statusCodes = map[string]int{}
+			fmt.Println(outfile, statusCodesCopy, errorPathsCopy)
+
+		default:
+			continue
+		}
+	}
+}
+
+func processLines(logFile string, statusCodes *map[string]int, errorPaths *map[string]int) {
 	t, err := tail.TailFile(logFile, tail.Config{Follow: true})
 	if err != nil {
 		panic(err)
 	}
 
-	errorPaths := map[string]int{}
-	statusCodes := map[string]int{}
-
 	// This loops forever
 	for line := range t.Lines {
-		fields := logFormatRegex.FindStringSubmatch(line.Text)
-		if fields == nil {
-			panic(fmt.Errorf("access log line '%v' does not match given format '%v'", line, logFormatRegex))
-		}
+		processLine(line.Text, statusCodes, errorPaths)
+	}
+}
 
-		logEntry := map[string]string{}
+func processLine(line string, statusCodes *map[string]int, errorPaths *map[string]int) {
+	fields := logFormatRegex.FindStringSubmatch(line)
+	if fields == nil {
+		panic(fmt.Errorf("access log line '%v' does not match given format '%v'", line, logFormatRegex))
+	}
 
-		for i, name := range logFormatRegex.SubexpNames() {
-			logEntry[name] = fields[i]
-		}
+	logEntry := map[string]string{}
 
-		code, ok := logEntry["status"]
+	for i, name := range logFormatRegex.SubexpNames() {
+		logEntry[name] = fields[i]
+	}
+
+	code, ok := logEntry["status"]
+	if !ok {
+		return
+	}
+
+	code = grabStatusCodeClass(code)
+
+	(*statusCodes)[code]++
+	if code == "50x" {
+		req, ok := logEntry["request"]
 		if !ok {
 			return
 		}
-
-		code = grabStatusCodeClass(code)
-
-		statusCodes[code]++
-		if code == "50x" {
-			req, ok := logEntry["request"]
-			if !ok {
-				return
-			}
-			errorPaths[grabPathFromRequest(req)]++
-		}
-
-		fmt.Println(statusCodes, errorPaths)
+		(*errorPaths)[grabPathFromRequest(req)]++
 	}
 }
 
