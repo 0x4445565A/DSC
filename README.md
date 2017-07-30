@@ -12,6 +12,7 @@ minikube start
 eval $(minikube docker-env)
 
 # build dsc-logger container
+# This als runs test
 docker build -t dsc:v1 .
 
 # build nginx-app this would normally be an individual project normally but for this example we'll leave it here
