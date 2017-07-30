@@ -138,6 +138,6 @@ func requestRegex() *regexp.Regexp {
 }
 
 func logRegex() *regexp.Regexp {
-	re := regexp.MustCompile(`^(?P<remote_addr>[^ ]*) - (?P<http_x_forwarded_for>[^-]*) - (?P<http_x_realip>[^ ]*) - \[(?P<time_local>[^]]*)\] (?P<scheme>[^ ]*) (?P<http_x_forwarded_proto>[^ ]*) (?P<x_forwarded_proto_or_scheme>[^ ]*) (?P<x_forwarded_proto_or_scheme>[^ ]*) "(?P<request>[^"]*)" (?P<status>[^ ]*) (?P<body_bytes_sent>[^ ]*) "(?P<http_referer>[^"]*)" "(?P<http_user_agent>[^"]*)"`)
+	re := regexp.MustCompile(`^(?P<remote_addr>[^ ]*) - (?P<http_x_forwarded_for>[^ ]*) - (?P<http_x_realip>[^ ]*) - \[(?P<time_local>[^]]*)\]( ){1,2}(?P<scheme>[^ ]*) (?P<http_x_forwarded_proto>[^ ]*) (?P<x_forwarded_proto_or_scheme>[^ ]*) "(?P<request>[^"]*)" (?P<status>[^ ]*) (?P<body_bytes_sent>[^ ]*) "(?P<http_referer>[^"]*)" "(?P<http_user_agent>[^"]*)"`)
 	return re
 }
