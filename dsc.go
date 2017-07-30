@@ -115,6 +115,7 @@ func outputDataToString(statusCodes map[string]int, errorPaths map[string]int) (
 		out += fmt.Sprintf("%s:%d|s\n", path, val)
 	}
 
+	fmt.Print(out)
 	return
 }
 
