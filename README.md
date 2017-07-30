@@ -5,6 +5,9 @@
 git clone git@github.com:0x4445565A/DSC.git
 cd DSC
 
+# Start Minikube
+minikube start
+
 # Switch to minikube scope
 eval $(minikube docker-env)
 
@@ -37,10 +40,10 @@ curl $CLUSTER_URL/600
 kubectl logs dsc-project dsc-logger
 ```
 
-## Check Stats
-```
-docker ps # Get container ID
-docker exec -i -t ID /usr/bin/tail -f /var/log/stats.log
-```
 
-You can append data to access to /var/log/nginx/access.log to watch it update
+## Clean Up
+```
+kubectl delete service dsc-project
+kubectl delete pod dsc-project
+minikube stop
+```
