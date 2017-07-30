@@ -7,6 +7,7 @@ import (
 	"time"
 	"os"
 	"flag"
+	"log"
 )
 
 // Make this global so we only have to compile it once
@@ -45,8 +46,12 @@ func logCollector(outfile string, statusCodes *map[string]int, errorPaths *map[s
 			statusCodesCopy := *statusCodes
 			*errorPaths = map[string]int{}
 			*statusCodes = map[string]int{}
+
 			//fmt.Println(outfile, outputDataToString(statusCodesCopy, errorPathsCopy))
-			writeDataToLogfile(outfile, outputDataToString(statusCodesCopy, errorPathsCopy))
+			err := writeDataToLogfile(outfile, outputDataToString(statusCodesCopy, errorPathsCopy))
+			if err != nil {
+				log.Println(err)
+			}
 
 		default:
 			continue
@@ -56,22 +61,27 @@ func logCollector(outfile string, statusCodes *map[string]int, errorPaths *map[s
 
 func processLines(logFile string, statusCodes *map[string]int, errorPaths *map[string]int) {
 	t, err := tail.TailFile(logFile, tail.Config{Follow: true})
+
+	// There is something seriously wrong since tail waits for files, probably should just panic
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 
 	// This loops forever
 	for line := range t.Lines {
-		processLine(line.Text, statusCodes, errorPaths)
+		err := processLine(line.Text, statusCodes, errorPaths)
+		if err != nil {
+			log.Println(err)
+		}
 	}
 }
 
-func processLine(line string, statusCodes *map[string]int, errorPaths *map[string]int) {
+func processLine(line string, statusCodes *map[string]int, errorPaths *map[string]int) error {
 	var code, request string
 
 	fields := logFormatRegex.FindStringSubmatch(line)
 	if fields == nil {
-		panic(fmt.Errorf("access log line '%v' does not match given format '%v'", line, logFormatRegex))
+		return fmt.Errorf("access log line '%v' does not match given format '%v'", line, logFormatRegex)
 	}
 
 	// This wont change unless the format changes so I'm happy for the efficientcy gain
@@ -82,6 +92,8 @@ func processLine(line string, statusCodes *map[string]int, errorPaths *map[strin
 	if code == "50x" {
 		(*errorPaths)[grabPathFromRequest(request)]++
 	}
+
+	return nil
 }
 
 // Grab the status code and make it generic
@@ -115,21 +127,25 @@ func outputDataToString(statusCodes map[string]int, errorPaths map[string]int) (
 		out += fmt.Sprintf("%s:%d|s\n", path, val)
 	}
 
+	// Output to STDOUT so kubectl log can find it
 	fmt.Print(out)
 	return
 }
 
-func writeDataToLogfile(outfile string, data string) {
+func writeDataToLogfile(outfile string, data string) error {
 	f, err := os.OpenFile(outfile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	defer f.Close()
 
-	if _, err = f.WriteString(data); err != nil {
-		panic(err)
+	_, err = f.WriteString(data)
+	if err != nil {
+		return err
 	}
+
+	return nil
 }
 
 
