@@ -85,8 +85,8 @@ func processLine(line string, statusCodes *map[string]int, errorPaths *map[strin
 	}
 
 	// This wont change unless the format changes so I'm happy for the efficientcy gain
-	request = fields[9]
-	code = grabStatusCodeClass(fields[10])
+	request = fields[11]
+	code = grabStatusCodeClass(fields[12])
 
 	(*statusCodes)[code]++
 	if code == "50x" {
@@ -155,6 +155,6 @@ func requestRegex() *regexp.Regexp {
 }
 
 func logRegex() *regexp.Regexp {
-	re := regexp.MustCompile(`^(?P<remote_addr>[^ ]*) - (?P<http_x_forwarded_for>[^ ]*) - (?P<http_x_realip>[^ ]*) - \[(?P<time_local>[^]]*)\]( ){1,2}(?P<scheme>[^ ]*) (?P<http_x_forwarded_proto>[^ ]*) (?P<x_forwarded_proto_or_scheme>[^ ]*) "(?P<request>[^"]*)" (?P<status>[^ ]*) (?P<body_bytes_sent>[^ ]*) "(?P<http_referer>[^"]*)" "(?P<http_user_agent>[^"]*)"`)
+	re := regexp.MustCompile(`^(?P<remote_addr>[^ ]*) - (?P<http_x_forwarded_for>(([0-9\., ])+|-)) - (?P<http_x_realip>[^ ]*) - \[(?P<time_local>[^]]*)\]( ){1,2}(?P<scheme>[^ ]*) (?P<http_x_forwarded_proto>[^ ]*) (?P<x_forwarded_proto_or_scheme>[^ ]*) "(?P<request>[^"]*)" (?P<status>[^ ]*) (?P<body_bytes_sent>[^ ]*) "(?P<http_referer>[^"]*)" "(?P<http_user_agent>[^"]*)"`)
 	return re
 }
